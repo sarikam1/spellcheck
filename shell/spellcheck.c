@@ -9,7 +9,7 @@
 /* Main function */
 int main(int argc, char **argv)
 {
-	// initialization: dictionary?
+	// (tracking changes) initialization: dictionary
 	int i = 0;
 	int *quit = &i;
 
