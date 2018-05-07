@@ -11,10 +11,7 @@ typedef struct word {
 
 
 int valid_word(char* word, dict_t *dict);
-
-char *generate_suggestions(char* word, int max_num_sugg, dict_t *dict);
-
-
+int generate_suggestions(char* word, dict_t* dict, char **suggestions);
 
 
 #endif

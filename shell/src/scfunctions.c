@@ -75,6 +75,18 @@ void underline_correct_spelling(char *tkn, char* underline) {
 
 }
 
+
+
+void add_to_badwords(char *badword, char** badwords) {
+	int i = 0;
+	while(badwords[i] != NULL) {
+		i++;
+	}
+	badwords[i] = badword;
+	// printf("adding badword %s", badword);
+	// printf("i is %d ", i);
+}
+
 /* Functions needed for batch mode */
 //void batch_mode(int argc, char **argv)
 //{
@@ -83,7 +95,7 @@ void underline_correct_spelling(char *tkn, char* underline) {
 
 
 //taking a line and dividing into words
-void parse_string(char* string, dict_t *dict, char *underline) {
+void parse_string(char* string, dict_t *dict, char *underline, char** badwords) {
 
 	
 	char *tkn = strtok(string," ,.-'\n'"); //words only separated by these punctuation
@@ -92,6 +104,7 @@ void parse_string(char* string, dict_t *dict, char *underline) {
 		if (valid_word(tkn, dict) == 0){
 			printf("%s ", tkn);
 			underline_misspelled(tkn, underline);
+			add_to_badwords(tkn, badwords);
 		}
 		else if (valid_word(tkn, dict) == 1) {
 			printf("%s ", tkn);
@@ -105,22 +118,113 @@ void parse_string(char* string, dict_t *dict, char *underline) {
 
 }
 
+//reference from https://stackoverflow.com/questions/32413667/replace-all-occurrences-of-a-substring-in-a-string-in-c
+char* correct_line(char* line, char* old_word, char* new_word) {
+	char buffer[2000] = {0}; //again, we might need to modify our size estimates
+	char *insert_point = &buffer[0];
+	char *tmp = line;
+	int old_length = strlen(old_word);
+	int new_length = strlen(new_word);
+
+	while(1) {
+		char *p = strstr(tmp, old_word);
+
+		if (p == NULL) {
+			strcpy(insert_point, tmp);
+			break;
+		}
+
+		memcpy(insert_point, tmp, p - tmp);
+		insert_point += p - tmp;
+
+		memcpy(insert_point, new_word, new_length);
+		insert_point += new_length;
+
+		tmp = p + old_length;
+	}
+
+	strcpy(line, buffer);
+}
+
+
+
+
+
+
+
 
 /* Functions needed for interactive mode */
 char* edit_interactive(char* line, dict_t* dict)
 {
-    //printf("%s", line);
+
+    char *line_copy = malloc(strlen(line));
+    strcpy(line_copy, line);
+
+    int length = strlen(line)/3; //approximate 3 chars per word to be safe
+    int max_no_suggestions = 2; //should the user decide this?
+    char *badwords[length]; 
+    for (int i = 0; i < length; i++) {
+    	badwords[i] = NULL;
+    }
     char *underline = (char *)malloc(strlen(line + 1));
     underline[0] = '\0';
     //char underline[strlen(line)] = "";
-    parse_string(line, dict, underline);
+    parse_string(line, dict, underline, badwords);
     printf("\n");
     printf("%s", underline);
     printf("\n");
-    
 
 
-	return line;
+
+    printf("Misspelled words in this sentence are: ");
+
+    int i = 0;
+    while(badwords[i] != NULL) {
+    	printf("%d: %s ",i+1, badwords[i]);
+    	i++;
+    }
+    printf("\n");
+    int number1;
+    printf("Enter the number value of the word you would like to change: ");
+    scanf("%d", &number1);
+
+    char *suggestions[max_no_suggestions]; 
+
+    int success = generate_suggestions(badwords[number1-1], dict, suggestions);
+
+    if(success != -1) {
+    	printf("Possible replacements are: ");
+    	printf("1: No replacement ");
+    	for (int i = 0; i < max_no_suggestions; i++) {
+    		printf("%d : %s ", i+2, suggestions[i]);
+
+    	}  	
+
+    }
+
+    int number2;
+    printf("Enter the number of the replacement: ");
+    scanf("%d", &number2);
+
+    if (number2 != 1) {
+    	printf("Replacing %s with %s \n", badwords[number1-1], suggestions[number2-2]);
+    	correct_line(line_copy, badwords[number1-1], suggestions[number2-2]);
+    	printf("Correct sentence is: \n");
+     	printf("%s \n", line_copy);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+	return line_copy;
 	// need a way for string to (a) preserve punctuations and (b) 
 	// @Sarika this would be where the program needs replace_word, ignore_word, alternate_spelling
 
