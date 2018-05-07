@@ -7,6 +7,7 @@
 #include <assert.h>
 #include "shellstrings.h"
 #include "parser.h"
+#include "dictionary.h"
 
 /* functions for saving files */
 void save_corrections(char* filename, char** lines);
@@ -17,7 +18,7 @@ void save_page(char* filename, char** lines,int* quit);
 void batch_mode(int argc, char **argv);
 
 /* Functions needed for interactive mode */
-char* edit_interactive(char* line);
+char* edit_interactive(char* line, dict_t* dict);
 
 void interactive_mode(char** filename, int* quit);
 

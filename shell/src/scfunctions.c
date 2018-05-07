@@ -5,6 +5,11 @@
 #include "shellstrings.h"
 #include "parser.h"
 #include "scfunctions.h"
+#include "dictionary.h"
+#include "word.h"
+
+
+
 
 void save_corrections(char* filename, char** lines)
 {
@@ -51,6 +56,25 @@ void save_page(char* filename, char** lines,int* quit)
 }
 
 
+void underline_misspelled(char *tkn, char* underline) {
+	for(int i = 0; i < strlen(tkn); i++) {
+    	strcat(underline, "^");
+	}
+		strcat(underline, " ");
+		// printf("start \n");
+		// printf("%s", underline);
+		// printf("end \n");
+
+}
+
+void underline_correct_spelling(char *tkn, char* underline) {
+		for(int i = 0; i < strlen(tkn); i++) {
+    		strcat(underline, " ");
+	}
+		strcat(underline, " ");
+
+}
+
 /* Functions needed for batch mode */
 //void batch_mode(int argc, char **argv)
 //{
@@ -58,9 +82,44 @@ void save_page(char* filename, char** lines,int* quit)
 //}
 
 
+//taking a line and dividing into words
+void parse_string(char* string, dict_t *dict, char *underline) {
+
+	
+	char *tkn = strtok(string," ,.-'\n'"); //words only separated by these punctuation
+	while (tkn != NULL) {
+
+		if (valid_word(tkn, dict) == 0){
+			printf("%s ", tkn);
+			underline_misspelled(tkn, underline);
+		}
+		else if (valid_word(tkn, dict) == 1) {
+			printf("%s ", tkn);
+			underline_correct_spelling(tkn, underline);
+		}
+		else {
+			printf("error processing text");
+		}
+		tkn = strtok(NULL," ,.-");
+	}
+
+}
+
+
 /* Functions needed for interactive mode */
-char* edit_interactive(char* line)
+char* edit_interactive(char* line, dict_t* dict)
 {
+    //printf("%s", line);
+    char *underline = (char *)malloc(strlen(line + 1));
+    underline[0] = '\0';
+    //char underline[strlen(line)] = "";
+    parse_string(line, dict, underline);
+    printf("\n");
+    printf("%s", underline);
+    printf("\n");
+    
+
+
 	return line;
 	// need a way for string to (a) preserve punctuations and (b) 
 	// @Sarika this would be where the program needs replace_word, ignore_word, alternate_spelling
@@ -73,12 +132,20 @@ void interactive_mode(char** filename, int* quit)
 
 	lines = lineparse_file(filename[1]);
 
-	printf("%s", lines[15]);	// testing purposes
+	dict_t* dict;
+
+	dict = dict_new();
+	if (read_to_dict("sample_dict.txt", dict) == 1) {
+		printf("Dictionary successfully read! \n");
+	}
+	else {
+		printf("Trouble reading dictionary \n");
+	}
 
 	// step through phases
 	int i=0;
 	while (lines[i] != NULL) {	// potential error - one empty line in the middle of two full?	
-		lines[i] = edit_interactive(lines[i]);
+		lines[i] = edit_interactive(lines[i], dict);
 		i++;
 	}
 
